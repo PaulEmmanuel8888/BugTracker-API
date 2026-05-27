@@ -1,7 +1,13 @@
 import express from "express";
+import bodyParser from "body-parser";
 const PORT = 3000;
 const app = express();
 
+//Setup
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+
+bodyParser.urlencoded(tr);
 let bugs = [
   {
     id: 1,
@@ -74,6 +80,8 @@ let bugs = [
     status: "in-progress",
   },
 ];
+const validSeverities = ["low", "medium", "high"];
+const validStatuses = ["open", "in-progress", "resolved"];
 
 //Getting all bugs
 app.get("/bugs", (req, res) => {
@@ -90,6 +98,57 @@ app.get("/bugs/:id", (req, res) => {
     return res.status(404).json({
       message: "Bug not found",
     });
+  }
+});
+
+//Posting a bug
+app.post("/bugs", (req, res) => {
+  const { title, description, severity, status } = req.body;
+
+  if (!title || !description || !severity || !status) {
+    return res.status(400).json({
+      message: "All fields are required",
+    });
+  } else {
+    if (typeof title !== "string" || typeof description !== "string") {
+      return res.status(400).json({
+        message: "Title and description must be strings",
+      });
+    } else {
+      //validation for the title length
+      if (title.length < 5 || title.length > 100) {
+        return res.status(400).json({
+          message: "Title must be between 5 and 100 characters",
+        });
+      } else {
+        //validation for the description length
+        if (description.length < 10) {
+          return res.status(400).json({
+            message: "Description must be at least 10 characters",
+          });
+        } else {
+          //validation for the accepted severity ratings
+          if (!validSeverities.includes(severity)) {
+            return res.status(400).json({
+              message: "Severity must be low, medium, or high",
+            });
+          } else {
+            const newBug = {
+              id: bugs.length + 1,
+              title,
+              description,
+              severity,
+              status,
+            };
+            bugs.push(newBug);
+            return res.status(201).json({
+              message: "Bug created successfully",
+              bug: newBug,
+            });
+          }
+        }
+      }
+    }
   }
 });
 
