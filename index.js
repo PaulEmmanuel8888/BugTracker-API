@@ -7,7 +7,6 @@ const app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-bodyParser.urlencoded(tr);
 let bugs = [
   {
     id: 1,
@@ -90,7 +89,7 @@ app.get("/bugs", (req, res) => {
 
 //Getting a specific bug by id
 app.get("/bugs/:id", (req, res) => {
-  const bugId = Number(req.params.id);
+  const bugId = parseInt(req.params.id);
   const bug = bugs.find((bug) => bug.id === bugId);
   if (bug) {
     return res.status(200).json(bug);
@@ -103,7 +102,7 @@ app.get("/bugs/:id", (req, res) => {
 
 //Posting a bug
 app.post("/bugs", (req, res) => {
-  const { title, description, severity, status } = req.body;
+  const { title, description, severity, status } = req.body || {};
 
   if (!title || !description || !severity || !status) {
     return res.status(400).json({
@@ -133,23 +132,76 @@ app.post("/bugs", (req, res) => {
               message: "Severity must be low, medium, or high",
             });
           } else {
-            const newBug = {
-              id: bugs.length + 1,
-              title,
-              description,
-              severity,
-              status,
-            };
-            bugs.push(newBug);
-            return res.status(201).json({
-              message: "Bug created successfully",
-              bug: newBug,
-            });
+            if (!validStatuses.includes(status)) {
+              return res.status(400).json({
+                message: "Status must be open, in-progress, or resolved",
+              });
+            } else {
+              const newBug = {
+                id: bugs.length + 1,
+                title,
+                description,
+                severity,
+                status,
+              };
+              bugs.push(newBug);
+              return res.status(201).json({
+                message: "Bug created successfully",
+                bug: newBug,
+              });
+            }
           }
         }
       }
     }
   }
+});
+
+//For editing a bug
+app.put("/bugs/:id", (req, res) => {
+  const bugId = parseInt(req.params.id);
+  const { title, description, severity, status } = req.body || {};
+  const bug = bugs.find((bug) => bug.id === bugId);
+
+  if (!bug) {
+    return res.status(404).json({
+      message: "Bug not found",
+    });
+  } else {
+    if (severity && !["low", "medium", "high"].includes(severity)) {
+      return res.status(400).json({
+        message: "Invalid severity",
+      });
+    }
+    if (status && !["open", "in-progress", "resolved"].includes(status)) {
+      return res.status(400).json({
+        message: "Invalid status",
+      });
+    }
+    if (title) bug.title = title;
+    if (description) bug.description = description;
+    if (severity) bug.severity = severity;
+    if (status) bug.status = status;
+    return res.status(200).json({
+      message: "Bug updated successfully",
+      bug,
+    });
+  }
+});
+
+//Deleting a bug
+app.delete("/bugs/:id", (req, res) => {
+  const bugId = parseInt(req.params.id);
+  const bugIndex = bugs.findIndex((bug) => bug.id === bugId);
+  if (bugIndex < 0) {
+    return res.status(404).json({
+      message: "Bug not found",
+    });
+  }
+  bugs.splice(bugIndex, 1);
+  return res.status(200).json({
+    message: "Bug deleted successfully",
+  });
 });
 
 app.listen(PORT, () => {
