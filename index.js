@@ -75,10 +75,22 @@ let bugs = [
   },
 ];
 
+//Getting all bugs
 app.get("/bugs", (req, res) => {
-  return res.status(200).json({
-    message: "BugTracker API running",
-  });
+  return res.status(200).json(bugs);
+});
+
+//Getting a specific bug by id
+app.get("/bugs/:id", (req, res) => {
+  const bugId = Number(req.params.id);
+  const bug = bugs.find((bug) => bug.id === bugId);
+  if (bug) {
+    return res.status(200).json(bug);
+  } else {
+    return res.status(404).json({
+      message: "Bug not found",
+    });
+  }
 });
 
 app.listen(PORT, () => {
